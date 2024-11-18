@@ -97,9 +97,9 @@ values = [characters_np.shape[0], monster_animal_np.shape[0], food_np.shape[0], 
 plt.bar(categories, values)
 
 for i, category in enumerate(categories):
-    plt.text(i, values[i] + 0.5, category, ha='center', va='bottom', rotation=45)
+    plt.text(i, values[i] + 0.5, values[i], ha='center', va='bottom', rotation=0)
 
-plt.xticks([])
+
 plt.show()
 
 del characters_np
@@ -125,9 +125,9 @@ G_INPUT_LENGTH = 105
 
 # EXTERNAL HYPERPARAMETERS
 
-BATCH_SIZE=600
+BATCH_SIZE=100
 NUM_WORKERS=2
-LEARNING_RATE=0.002
+LEARNING_RATE=0.0003
 EPOCHS=100
 
 # Weight Initial

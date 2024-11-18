@@ -10,25 +10,28 @@ class Discriminator(nn.Module):
         self.convolutional_model = nn.Sequential(
             # 3x16x16
             nn.Conv2d(3, 32, 3, 2, 1, bias=False),
-            nn.Dropout(0.1),
+            nn.BatchNorm2d(32),
             nn.LeakyReLU(0.2, inplace=True),
             # 32x8x8
             nn.Conv2d(32, 64, 3, 2, 1, bias=False),
-            nn.Dropout(0.1),
+            nn.BatchNorm2d(64),
             nn.LeakyReLU(0.2, inplace=True),
             # 64x4x4
-            nn.Conv2d(64, 64, 3, 1, 1, bias=False),
-            nn.Dropout(0.1),
+            nn.Conv2d(64, 128, 3, 2, 1, bias=False),
+            nn.BatchNorm2d(128),
+            # 128x2x2
+
+
             nn.LeakyReLU(0.2, inplace=True),
 
             nn.Flatten()
         )
         self.dense_model = nn.Sequential(
             # x(64*4*4+5)
-            nn.Linear(64*4*4+5, 128, dtype=torch.float),
-            nn.Dropout(0.1),
+            nn.Linear(128*2*2+5, 256, dtype=torch.float),
+            nn.LayerNorm(256),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(128, 1, dtype=torch.float),
+            nn.Linear(256, 1, dtype=torch.float),
             nn.Sigmoid()
         )
 
