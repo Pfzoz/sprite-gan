@@ -31,14 +31,15 @@ model.eval()
 
 command: str | None = None
 
+y_classes = torch.Tensor([y for y in set(itertools.permutations([5, 0, 0, 0, 0]))]).to(device)
+
 Z_VECTOR_LENGTH = 100
 
 with torch.no_grad():
     while not command == 'q':
-        command = input("'g' to generate, 'q' to quit")
+        command = input("'g' to generate, 'q' to quit\n")
         if command == 'g':
             fixed_noise = torch.randn(5, Z_VECTOR_LENGTH, device=device)
-            y_classes = torch.Tensor([y for y in set(itertools.permutations([5, 0, 0, 0, 0]))]).to(device)
             result = model(fixed_noise, y_classes).detach().cpu()
             plt.imshow(np.transpose(vutils.make_grid(result[:5])))
             plt.show()

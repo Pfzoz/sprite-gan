@@ -8,15 +8,19 @@ class Discriminator(nn.Module):
         self.convolutional_model = nn.Sequential(
             # 3x16x16
             nn.utils.spectral_norm(nn.Conv2d(3, 16, 4, 2, 1, bias=False)),
+            nn.BatchNorm2d(16),
             nn.LeakyReLU(inplace=True),
             # 32x8x8
             nn.utils.spectral_norm(nn.Conv2d(16, 32, 4, 2, 1, bias=False)),
+            nn.BatchNorm2d(32),
             nn.LeakyReLU(inplace=True),
             #
             nn.utils.spectral_norm(nn.Conv2d(32, 64, 3, 2, 1, bias=False)),
+            nn.BatchNorm2d(64),
             nn.LeakyReLU(inplace=True),
             #
             nn.utils.spectral_norm(nn.Conv2d(64, 128, 3, 2, 1, bias=False)),
+            nn.BatchNorm2d(128),
             nn.LeakyReLU(inplace=True),
             # 128x2x2
             nn.Flatten()
