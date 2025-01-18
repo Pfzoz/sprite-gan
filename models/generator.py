@@ -12,7 +12,6 @@ class Generator(nn.Module):
             nn.Linear(105, linear_output, dtype=torch.float),
             nn.LayerNorm(linear_output),
             nn.ReLU(inplace=True),
-
             nn.Unflatten(dim=1, unflattened_size=(128, 28, 28)),            # nn.Upsample(scale_factor=2),
 
             # 28x28x256

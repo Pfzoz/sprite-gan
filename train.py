@@ -62,7 +62,7 @@ if not os.path.exists(MODEL_SAVING_PATH):
 BATCH_SIZE=150
 NUM_WORKERS=2
 LEARNING_RATE=0.0003
-EPOCHS=1000
+EPOCHS=100
 
 # Weight Initial
 
@@ -119,11 +119,13 @@ with open(f"{MODEL_SAVING_PATH}/{final_path}/info.txt", "w+") as info_file:
 
 for epoch in range(EPOCHS):
     if (epoch % 1 == 0):
+        generator.eval()
         with torch.no_grad():
             generated_fixed = generator(fixed_noise, y_classes).detach().cpu()
             plt.imshow(np.transpose(vutils.make_grid(generated_fixed[:5])))
             plt.savefig(fname=f"{MODEL_SAVING_PATH}/{final_path}/e-{epoch}.jpg")
             plt.close()
+        generator.train()
     for i, (image_data, label_data) in enumerate(dataloader):
 
         # Optimize D
@@ -163,6 +165,10 @@ for epoch in range(EPOCHS):
 
         optimizer_G.step()
         print(f"Epoch: {epoch} - Batch: {i}; G-Loss: {generator_error} D-Loss: {discriminator_real_errors}")
+
+torch.save(generator.state_dict(), f"{MODEL_SAVING_PATH}/{final_path}/state_dict.pt")
+
+generator.eval()
 
 with torch.no_grad():
     generated_fixed = generator(fixed_noise, y_classes).detach().cpu()
