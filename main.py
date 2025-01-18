@@ -1,3 +1,5 @@
+from posix import write
+from genericpath import exists
 ### IMPORTS ###
 
 import torch
@@ -50,13 +52,17 @@ print(f"Device: {device}")
 Z_VECTOR_LENGTH = 100
 Y_LENGTH = 5
 G_INPUT_LENGTH = 105
+MODEL_SAVING_PATH="results"
+
+if not os.path.exists(MODEL_SAVING_PATH):
+    os.mkdir(MODEL_SAVING_PATH)
 
 # EXTERNAL HYPERPARAMETERS
 
-BATCH_SIZE=100
+BATCH_SIZE=150
 NUM_WORKERS=2
 LEARNING_RATE=0.0003
-EPOCHS=50
+EPOCHS=1000
 
 # Weight Initial
 
@@ -85,26 +91,44 @@ discriminator.apply(weights_init)
 
 loss_fn = nn.BCELoss()
 
+# Fixed noise for testing same input. 5 Images that we'll be generating so 5 input latent vectors
+# Making vector of all 5 possible classes to generate one of each
+
 fixed_noise = torch.randn(5, Z_VECTOR_LENGTH, device=device)
-y_classes = torch.Tensor([y for y in set(itertools.permutations([1, 0, 0, 0, 0]))]).to(device)
+y_classes = torch.Tensor([y for y in set(itertools.permutations([5, 0, 0, 0, 0]))]).to(device)
 
 optimizer_D = optim.Adam(discriminator.parameters(), lr=LEARNING_RATE, betas=(0.5, 0.999))
 optimizer_G = optim.Adam(generator.parameters(), lr=LEARNING_RATE, betas=(0.5, 0.999))
 
+# Path for Fixed Noise Image
+
+final_path = "model-0"
+i = 0
+while os.path.exists(f"{MODEL_SAVING_PATH}/{final_path}"):
+    i += 1
+    final_path = f"model-{i}"
+
+os.mkdir(f"{MODEL_SAVING_PATH}/{final_path}")
+
+with open(f"{MODEL_SAVING_PATH}/{final_path}/info.txt", "w+") as info_file:
+    info_file.write(f"Seed: {torch.seed()} Cuda seed: {torch.cuda.seed()}\n")
+    info_file.write("Generator:\n\n")
+    info_file.write(str(generator))
+    info_file.write("Discriminator\n\n")
+    info_file.write(str(discriminator))
+
 for epoch in range(EPOCHS):
-    # if (epoch % 1 == 0):
-        # with torch.no_grad():
-        #     generated_fixed = generator(fixed_noise, y_classes).detach().cpu()
-        #     # images = []
-        #     # for image in generated_fixed:
-        #     #     images.append(image.permute(1, 2, 0))
-        #     plt.imshow(np.transpose(vutils.make_grid(generated_fixed[:5])))
-        #     plt.show()
+    if (epoch % 1 == 0):
+        with torch.no_grad():
+            generated_fixed = generator(fixed_noise, y_classes).detach().cpu()
+            plt.imshow(np.transpose(vutils.make_grid(generated_fixed[:5])))
+            plt.savefig(fname=f"{MODEL_SAVING_PATH}/{final_path}/e-{epoch}.jpg")
+            plt.close()
     for i, (image_data, label_data) in enumerate(dataloader):
-        print(f"Epoch: {epoch} - Batch: {i}")
+
         # Optimize D
         image_data_gpu = image_data.to(device)
-        label_data_gpu = label_data.to(device).float()
+        label_data_gpu = (label_data * 5).to(device).float()
 
         # print( "Images shape:", image_data_gpu.shape, image_data_gpu.dtype)
         # print("Labels shape:", label_data_gpu.shape, label_data_gpu.dtype)
@@ -115,7 +139,7 @@ for epoch in range(EPOCHS):
         output = discriminator(image_data_gpu, label_data_gpu)
         discriminator_real_errors = loss_fn(output, labels_tensor)
         discriminator_real_errors.backward()
-        discriminator_x = output.mean().item()
+        # discriminator_x = output.mean().item()
 
         # Fake
         noise = torch.randn(BATCH_SIZE, Z_VECTOR_LENGTH, dtype=torch.float).to(device)
@@ -124,8 +148,8 @@ for epoch in range(EPOCHS):
         output = discriminator(generated_samples.detach(), label_data_gpu)
         discriminator_fake_errors = loss_fn(output, labels_tensor)
         discriminator_fake_errors.backward()
-        discriminator_generator_z1 = discriminator_fake_errors.mean().item()
-        discriminator_error = discriminator_generator_z1 + discriminator_x
+        # discriminator_generator_z1 = discriminator_fake_errors.mean().item()
+        # discriminator_error = discriminator_generator_z1 + discriminator_x
         optimizer_D.step()
 
         # Optimize Generator
@@ -135,9 +159,10 @@ for epoch in range(EPOCHS):
         output = discriminator(generated_samples, label_data_gpu)
         generator_error = loss_fn(output, labels_tensor)
         generator_error.backward()
-        discriminator_generator_z2 = output.mean().item()
+        # discriminator_generator_z2 = output.mean().item()
 
         optimizer_G.step()
+        print(f"Epoch: {epoch} - Batch: {i}; G-Loss: {generator_error} D-Loss: {discriminator_real_errors}")
 
 with torch.no_grad():
     generated_fixed = generator(fixed_noise, y_classes).detach().cpu()
